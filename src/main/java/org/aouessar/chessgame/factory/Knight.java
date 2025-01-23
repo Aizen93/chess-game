@@ -6,8 +6,8 @@ import org.aouessar.chessgame.Color;
 
 public class Knight extends Piece {
 
-    public Knight(Color color, int row, int col, Image icon) {
-        super(color, row, col, icon);
+    public Knight(char name, Color color, int row, int col, Image icon) {
+        super(name, color, row, col, icon);
     }
 
     @Override

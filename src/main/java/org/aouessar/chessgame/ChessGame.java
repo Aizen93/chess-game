@@ -7,19 +7,20 @@ import javafx.stage.Stage;
 
 public class ChessGame extends Application {
 
-    private static final int TILE_SIZE = 80;
+    public static final int TILE_SIZE = 80;
 
-    private static final int WIDTH = 8; // Chessboard width
+    public static final int WIDTH = 8; // Chessboard width
 
-    private static final int HEIGHT = 8; // Chessboard height
+    public static final int HEIGHT = 8; // Chessboard height
 
 
     @Override
     public void start(Stage stage) {
         GridPane gridPane = new GridPane();
 
-        Board board = new Board(TILE_SIZE, WIDTH, HEIGHT);
-        board.renderBoard(gridPane);
+        Board board = new Board(TILE_SIZE, WIDTH, HEIGHT, gridPane);
+        board.renderBoard();
+        board.initializePieces("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", gridPane);
 
         // Display the stage
         Scene scene = new Scene(gridPane, TILE_SIZE * WIDTH, TILE_SIZE * HEIGHT);

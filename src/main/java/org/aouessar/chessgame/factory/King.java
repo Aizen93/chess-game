@@ -5,8 +5,8 @@ import org.aouessar.chessgame.Board;
 import org.aouessar.chessgame.Color;
 
 public class King extends Piece {
-    public King(Color color, int row, int col, Image icon) {
-        super(color, row, col, icon);
+    public King(char name, Color color, int row, int col, Image icon) {
+        super(name, color, row, col, icon);
     }
 
     @Override

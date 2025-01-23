@@ -6,8 +6,8 @@ import org.aouessar.chessgame.Color;
 
 public class Rook extends Piece {
 
-    public Rook(Color color, int row, int col, Image icon) {
-        super(color, row, col, icon);
+    public Rook(char name, Color color, int row, int col, Image icon) {
+        super(name, color, row, col, icon);
     }
 
     @Override

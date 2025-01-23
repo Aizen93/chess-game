@@ -1,6 +1,7 @@
 package org.aouessar.chessgame;
 
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -10,6 +11,7 @@ import org.aouessar.chessgame.factory.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Getter
 @Setter
@@ -23,19 +25,30 @@ public class Board {
 
     private Piece[][] board; // Board array
 
+    private GridPane grid;
+
     private final Map<String, Image> pieceImages = new HashMap<>(); // Map for piece images
 
+    private Piece selectedPiece = null;
 
-    public Board(int tileSize, int width, int height) {
+    private Rectangle highlightedTile = null;
+
+    private boolean isWhiteTurn = true;
+
+
+
+    public Board(int tileSize, int width, int height, GridPane gridPane) {
         this.TILE_SIZE = tileSize;
         this.WIDTH = width;
         this.HEIGHT = height;
         this.board = new Piece[HEIGHT][WIDTH];
+        this.grid = gridPane;
         loadPieceImages();
     }
 
 
-    public void renderBoard(GridPane grid) {
+
+    public void renderBoard() {
         grid.getChildren().clear(); // Clear previous board before rendering
 
         for (int row = 0; row < HEIGHT; row++) {
@@ -60,12 +73,34 @@ public class Board {
             rect.setFill(Color.valueOf("#739552")); // Dark tiles
         }
 
+        rect.setOnMouseClicked(e -> handleTileClick(row, col, rect));
+
         return rect;
     }
 
 
 
-    public void initializePieces(String fen) {
+    private void handleTileClick(int row, int col, Rectangle rect) {
+        if (selectedPiece == null && board[row][col] != null) {
+            selectedPiece = board[row][col];
+            highlightTile(rect);
+            System.out.println("Piece selected at (" + row + ", " + col + "): " + (selectedPiece.getColor().name() + " " + selectedPiece.getClass().getSimpleName()));
+        }
+        else if (selectedPiece != null) {
+            if (board[row][col] != null && board[row][col].isFriendlyPiece(selectedPiece.getRow(), selectedPiece.getCol(), this)) {
+                selectedPiece = board[row][col];
+                highlightTile(rect);
+                System.out.println("Piece selection changed at (" + row + ", " + col + "): " + (selectedPiece.getColor().name() + " " + selectedPiece.getClass().getSimpleName()));
+            }
+            else {
+                move(row, col);
+            }
+        }
+    }
+
+
+
+    public void initializePieces(String fen, GridPane grid) {
         String[] parts = fen.split(" ");
 
         if (parts.length < 1) {
@@ -88,7 +123,9 @@ public class Board {
                     col += emptySquares;
                 } else if ("prnbqkPRNBQK".indexOf(ch) != -1) {
                     // Piece characters
-                    board[row][col] = fenCharToPiece(ch, row, col);
+                    Piece piece = fenCharToPiece(ch, row, col);
+                    piece.addPieceToGrid(grid);
+                    board[row][col] = piece;
                     col++;
                 } else {
                     System.out.println("Invalid FEN character: " + ch);
@@ -102,20 +139,68 @@ public class Board {
     }
 
 
+
+    private void move(int endRow, int endCol) {
+        board[endRow][endCol] = selectedPiece;
+        board[selectedPiece.getRow()][selectedPiece.getCol()] = null;
+
+        grid.getChildren().remove(selectedPiece.getIcon());
+        selectedPiece.setCol(endCol);
+        selectedPiece.setRow(endRow);
+        selectedPiece.addPieceToGrid(grid);
+
+        selectedPiece = null;
+
+        resetHighlight();
+    }
+
+
+    private void highlightTile(Rectangle rect) {
+        resetHighlight();
+
+        rect.setFill(Color.YELLOW);
+        highlightedTile = rect;
+    }
+
+
+
+    private void resetHighlight() {
+        if (highlightedTile != null) {
+            int previousRow = GridPane.getRowIndex(highlightedTile);
+            int previousCol = GridPane.getColumnIndex(highlightedTile);
+
+            if ((previousRow + previousCol) % 2 == 0) {
+                highlightedTile.setFill(Color.valueOf("#ebecd0"));
+            } else {
+                highlightedTile.setFill(Color.valueOf("#739552"));
+            }
+
+            highlightedTile = null;
+        }
+    }
+
+
+
     private Piece fenCharToPiece(char ch, int row, int col){
         return switch (ch) {
-            case 'p' -> new Pawn(org.aouessar.chessgame.Color.BLACK, row, col, pieceImages.get("p"));
-            case 'r' -> new Rook(org.aouessar.chessgame.Color.BLACK, row, col, pieceImages.get("r"));
-            case 'n' -> new Knight(org.aouessar.chessgame.Color.BLACK, row, col, pieceImages.get("n"));
-            case 'b' -> new Bishop(org.aouessar.chessgame.Color.BLACK, row, col, pieceImages.get("b"));
-            case 'q' -> new Queen(org.aouessar.chessgame.Color.BLACK, row, col, pieceImages.get("q"));
-            case 'k' -> new King(org.aouessar.chessgame.Color.BLACK, row, col, pieceImages.get("k"));
-            case 'P' -> new Pawn(org.aouessar.chessgame.Color.WHITE, row, col, pieceImages.get("P"));
-            case 'R' -> new Rook(org.aouessar.chessgame.Color.WHITE, row, col, pieceImages.get("R"));
-            case 'N' -> new Knight(org.aouessar.chessgame.Color.WHITE, row, col, pieceImages.get("N"));
-            case 'B' -> new Bishop(org.aouessar.chessgame.Color.WHITE, row, col, pieceImages.get("B"));
-            case 'Q' -> new Queen(org.aouessar.chessgame.Color.WHITE, row, col, pieceImages.get("Q"));
-            case 'K' -> new King(org.aouessar.chessgame.Color.WHITE, row, col, pieceImages.get("K"));
+            case 'p' -> new Pawn('p', org.aouessar.chessgame.Color.BLACK, row, col, pieceImages.get("p"));
+            case 'P' -> new Pawn('P', org.aouessar.chessgame.Color.WHITE, row, col, pieceImages.get("P"));
+
+            case 'r' -> new Rook('r', org.aouessar.chessgame.Color.BLACK, row, col, pieceImages.get("r"));
+            case 'R' -> new Rook('R', org.aouessar.chessgame.Color.WHITE, row, col, pieceImages.get("R"));
+
+            case 'n' -> new Knight('n', org.aouessar.chessgame.Color.BLACK, row, col, pieceImages.get("n"));
+            case 'N' -> new Knight('N', org.aouessar.chessgame.Color.WHITE, row, col, pieceImages.get("N"));
+
+            case 'b' -> new Bishop('b', org.aouessar.chessgame.Color.BLACK, row, col, pieceImages.get("b"));
+            case 'B' -> new Bishop('B', org.aouessar.chessgame.Color.WHITE, row, col, pieceImages.get("B"));
+
+            case 'q' -> new Queen('q', org.aouessar.chessgame.Color.BLACK, row, col, pieceImages.get("q"));
+            case 'Q' -> new Queen('Q', org.aouessar.chessgame.Color.WHITE, row, col, pieceImages.get("Q"));
+
+            case 'k' -> new King('k', org.aouessar.chessgame.Color.BLACK, row, col, pieceImages.get("k"));
+            case 'K' -> new King('K', org.aouessar.chessgame.Color.WHITE, row, col, pieceImages.get("K"));
+
             default -> null;
         };
     }
@@ -127,20 +212,38 @@ public class Board {
      */
     private void loadPieceImages() {
         try {
-            pieceImages.put("P", new Image(getClass().getResourceAsStream("white_pawn.png")));
-            pieceImages.put("p", new Image(getClass().getResourceAsStream("black_pawn.png")));
-            pieceImages.put("R", new Image(getClass().getResourceAsStream("white_rook.png")));
-            pieceImages.put("r", new Image(getClass().getResourceAsStream("black_rook.png")));
-            pieceImages.put("N", new Image(getClass().getResourceAsStream("white_knight.png")));
-            pieceImages.put("n", new Image(getClass().getResourceAsStream("black_knight.png")));
-            pieceImages.put("B", new Image(getClass().getResourceAsStream("white_bishop.png")));
-            pieceImages.put("b", new Image(getClass().getResourceAsStream("black_bishop.png")));
-            pieceImages.put("Q", new Image(getClass().getResourceAsStream("white_queen.png")));
-            pieceImages.put("q", new Image(getClass().getResourceAsStream("black_queen.png")));
-            pieceImages.put("K", new Image(getClass().getResourceAsStream("white_king.png")));
-            pieceImages.put("k", new Image(getClass().getResourceAsStream("black_king.png")));
+            pieceImages.put("P", new Image(Objects.requireNonNull(Board.class.getResourceAsStream("/public/white_pawn.png"))));
+            pieceImages.put("p", new Image(Objects.requireNonNull(Board.class.getResourceAsStream("/public/black_pawn.png"))));
+            pieceImages.put("R", new Image(Objects.requireNonNull(Board.class.getResourceAsStream("/public/white_rook.png"))));
+            pieceImages.put("r", new Image(Objects.requireNonNull(Board.class.getResourceAsStream("/public/black_rook.png"))));
+            pieceImages.put("N", new Image(Objects.requireNonNull(Board.class.getResourceAsStream("/public/white_knight.png"))));
+            pieceImages.put("n", new Image(Objects.requireNonNull(Board.class.getResourceAsStream("/public/black_knight.png"))));
+            pieceImages.put("B", new Image(Objects.requireNonNull(Board.class.getResourceAsStream("/public/white_bishop.png"))));
+            pieceImages.put("b", new Image(Objects.requireNonNull(Board.class.getResourceAsStream("/public/black_bishop.png"))));
+            pieceImages.put("Q", new Image(Objects.requireNonNull(Board.class.getResourceAsStream("/public/white_queen.png"))));
+            pieceImages.put("q", new Image(Objects.requireNonNull(Board.class.getResourceAsStream("/public/black_queen.png"))));
+            pieceImages.put("K", new Image(Objects.requireNonNull(Board.class.getResourceAsStream("/public/white_king.png"))));
+            pieceImages.put("k", new Image(Objects.requireNonNull(Board.class.getResourceAsStream("/public/black_king.png"))));
         } catch (Exception e) {
             System.err.println("Error loading piece images: " + e.getMessage());
         }
+    }
+
+
+
+    private void gridToConsole() {
+        System.out.println("_______________________________");
+        for (int row = 0; row < HEIGHT; row++) {
+            System.out.print("| ");
+            for (int col = 0; col < WIDTH; col++) {
+                if(board[row][col] != null) System.out.print(board[row][col].getName() + " | ");
+                else System.out.print("  | ");
+            }
+            System.out.println();
+            System.out.println("_________________________________");
+        }
+        System.out.println();
+        System.out.println("****************************************");
+        System.out.println();
     }
 }

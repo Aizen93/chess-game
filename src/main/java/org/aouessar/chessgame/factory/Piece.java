@@ -1,29 +1,42 @@
 package org.aouessar.chessgame.factory;
 
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.GridPane;
 import lombok.Getter;
 import lombok.Setter;
 import org.aouessar.chessgame.Board;
+import org.aouessar.chessgame.ChessGame;
 import org.aouessar.chessgame.Color;
 
 @Getter
 @Setter
 public abstract class Piece {
 
+    private final char name;
+
     private final Color color; // Indicates whether the piece is white or black
 
-    private final int row;
+    private int row;
 
-    private final int col;
+    public int col;
 
-    private final Image icon;
+    private final ImageView icon;
 
 
-    public Piece(Color color, int row, int col, Image icon) {
+    public Piece(char name, Color color, int row, int col, Image icon) {
+        this.name = name;
         this.color = color;
         this.row = row;
         this.col = col;
-        this.icon = icon;
+        this.icon = new ImageView(icon);
+    }
+
+    public void addPieceToGrid(GridPane grid) {
+        icon.setFitWidth(ChessGame.TILE_SIZE * 0.98);
+        icon.setFitHeight(ChessGame.TILE_SIZE * 0.98);
+        icon.setMouseTransparent(true);
+        grid.add(icon, col, row);
     }
 
 
@@ -32,7 +45,7 @@ public abstract class Piece {
 
 
     // Check if the destination is occupied by a friendly piece
-    protected boolean isFriendlyPiece(int x, int y, Board board) {
-        return board.getBoard()[x][y] != null && color.equals(board.getBoard()[x][y].color);
+    public boolean isFriendlyPiece(int row, int col, Board board) {
+        return board.getBoard()[row][col] != null && color.name().equals(board.getBoard()[row][col].getColor().name());
     }
 }

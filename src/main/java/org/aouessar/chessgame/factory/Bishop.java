@@ -6,8 +6,8 @@ import org.aouessar.chessgame.Color;
 
 public class Bishop extends Piece {
 
-    public Bishop(Color color, int row, int col, Image icon) {
-        super(color, row, col, icon);
+    public Bishop(char name, Color color, int row, int col, Image icon) {
+        super(name, color, row, col, icon);
     }
 
     @Override
