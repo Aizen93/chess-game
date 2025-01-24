@@ -1,7 +1,8 @@
 package org.aouessar.chessgame;
 
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -27,6 +28,8 @@ public class Board {
 
     private GridPane grid;
 
+    private boolean isGameOver = false;
+
     private final Map<String, Image> pieceImages = new HashMap<>(); // Map for piece images
 
     private Piece selectedPiece = null;
@@ -34,6 +37,10 @@ public class Board {
     private Rectangle highlightedTile = null;
 
     private boolean isWhiteTurn = true;
+
+    private Piece whiteKing;
+
+    private Piece blackKing;
 
 
 
@@ -81,19 +88,34 @@ public class Board {
 
 
     private void handleTileClick(int row, int col, Rectangle rect) {
+        if (isGameOver) {
+            return;
+        }
+
         if (selectedPiece == null && board[row][col] != null) {
+            if (board[row][col].isWhite() != isWhiteTurn) {
+                ChessGame.handleMessage("It's " + (isWhiteTurn ? "White" : "Black") + "'s turn.");
+                return;
+            }
+
             selectedPiece = board[row][col];
             highlightTile(rect);
-            System.out.println("Piece selected at (" + row + ", " + col + "): " + (selectedPiece.getColor().name() + " " + selectedPiece.getClass().getSimpleName()));
+            ChessGame.handleMessage("Piece selected at (" + row + ", " + col + "): " + (selectedPiece.getColor().name() + " " + selectedPiece.getClass().getSimpleName()));
         }
         else if (selectedPiece != null) {
-            if (board[row][col] != null && board[row][col].isFriendlyPiece(selectedPiece.getRow(), selectedPiece.getCol(), this)) {
+            if (board[row][col] != null && board[row][col].isFriendlyPiece(selectedPiece.getRow(), selectedPiece.getCol(), board)) {
                 selectedPiece = board[row][col];
                 highlightTile(rect);
-                System.out.println("Piece selection changed at (" + row + ", " + col + "): " + (selectedPiece.getColor().name() + " " + selectedPiece.getClass().getSimpleName()));
+                ChessGame.handleMessage("Piece selection changed at (" + row + ", " + col + "): " + (selectedPiece.getColor().name() + " " + selectedPiece.getClass().getSimpleName()));
             }
             else {
                 move(row, col);
+                org.aouessar.chessgame.Color player = !isWhiteTurn ? org.aouessar.chessgame.Color.WHITE : org.aouessar.chessgame.Color.BLACK;
+                if(Rules.isCheckmate(isWhiteTurn, HEIGHT, WIDTH, board)){
+                    ChessGame.handleMessage(player + " Wins");
+                    isGameOver = true;
+                    showCheckmatePopup();
+                }
             }
         }
     }
@@ -104,14 +126,14 @@ public class Board {
         String[] parts = fen.split(" ");
 
         if (parts.length < 1) {
-            System.out.println("Invalid FEN string: " + fen);
+            ChessGame.handleMessage("Invalid FEN string: " + fen);
         }
 
         String boardPart = parts[0];
         String[] rows = boardPart.split("/");
 
         if (rows.length != 8) {
-            System.out.println("FEN board description must have 8 rows: " + boardPart);
+            ChessGame.handleMessage("FEN board description must have 8 rows: " + boardPart);
         }
 
         for (int row = 0; row < WIDTH; row++) {
@@ -128,11 +150,11 @@ public class Board {
                     board[row][col] = piece;
                     col++;
                 } else {
-                    System.out.println("Invalid FEN character: " + ch);
+                    ChessGame.handleMessage("Invalid FEN character: " + ch);
                 }
             }
             if (col != 8) {
-                System.out.println("Row does not have exactly 8 columns: " + rows[row]);
+                ChessGame.handleMessage("Row does not have exactly 8 columns: " + rows[row]);
             }
         }
 
@@ -141,6 +163,14 @@ public class Board {
 
 
     private void move(int endRow, int endCol) {
+        if(!selectedPiece.isValidMove(selectedPiece.getRow(), selectedPiece.getCol(), endRow, endCol, board)){
+            ChessGame.handleMessage("Invalid move for " + (selectedPiece.getColor().name() + " " + selectedPiece.getClass().getSimpleName()));
+            return;
+        }
+        if(board[endRow][endCol] != null) {
+            grid.getChildren().remove(board[endRow][endCol].getIcon());
+        }
+
         board[endRow][endCol] = selectedPiece;
         board[selectedPiece.getRow()][selectedPiece.getCol()] = null;
 
@@ -151,14 +181,21 @@ public class Board {
 
         selectedPiece = null;
 
+        isWhiteTurn = !isWhiteTurn;
+
         resetHighlight();
+        //gridToConsole();
     }
+
+
+
+
 
 
     private void highlightTile(Rectangle rect) {
         resetHighlight();
 
-        rect.setFill(Color.YELLOW);
+        rect.setFill(Color.ORANGE);
         highlightedTile = rect;
     }
 
@@ -181,6 +218,39 @@ public class Board {
 
 
 
+    public void showCheckmatePopup() {
+        String winner = isWhiteTurn ? "Black" : "White";  // Winner is the opposite of the current turn
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Game Over");
+        alert.setHeaderText("Checkmate!");
+        alert.setContentText(winner + " wins!");
+
+        // Create a "Restart Game" button
+        ButtonType restartButton = new ButtonType("Restart Game");
+        alert.getButtonTypes().setAll(restartButton, ButtonType.CLOSE);
+
+        alert.showAndWait().ifPresent(response -> {
+            if (response == restartButton) {
+                restartGame();
+            }
+        });
+    }
+
+
+
+    public void restartGame() {
+        isWhiteTurn = true;
+        isGameOver = false;
+        this.board = new Piece[HEIGHT][WIDTH];
+        renderBoard();
+        initializePieces("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", grid);
+        ChessGame.handleMessage("-------------------------------------");
+        ChessGame.handleMessage("Game RESTARTED");
+    }
+
+
+
     private Piece fenCharToPiece(char ch, int row, int col){
         return switch (ch) {
             case 'p' -> new Pawn('p', org.aouessar.chessgame.Color.BLACK, row, col, pieceImages.get("p"));
@@ -198,8 +268,8 @@ public class Board {
             case 'q' -> new Queen('q', org.aouessar.chessgame.Color.BLACK, row, col, pieceImages.get("q"));
             case 'Q' -> new Queen('Q', org.aouessar.chessgame.Color.WHITE, row, col, pieceImages.get("Q"));
 
-            case 'k' -> new King('k', org.aouessar.chessgame.Color.BLACK, row, col, pieceImages.get("k"));
-            case 'K' -> new King('K', org.aouessar.chessgame.Color.WHITE, row, col, pieceImages.get("K"));
+            case 'k' -> blackKing = new King('k', org.aouessar.chessgame.Color.BLACK, row, col, pieceImages.get("k"));
+            case 'K' -> whiteKing = new King('K', org.aouessar.chessgame.Color.WHITE, row, col, pieceImages.get("K"));
 
             default -> null;
         };

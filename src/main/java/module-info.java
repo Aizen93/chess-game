@@ -1,4 +1,4 @@
-module org.example.demo {
+module org.aouessar.chessgame {
     requires javafx.controls;
     requires javafx.fxml;
 

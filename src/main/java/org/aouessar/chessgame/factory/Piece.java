@@ -5,7 +5,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import lombok.Getter;
 import lombok.Setter;
-import org.aouessar.chessgame.Board;
 import org.aouessar.chessgame.ChessGame;
 import org.aouessar.chessgame.Color;
 
@@ -41,11 +40,16 @@ public abstract class Piece {
 
 
     // Abstract method to check if a move is valid
-    abstract boolean isValidMove(int startX, int startY, int endX, int endY, Board board);
+    public abstract boolean isValidMove(int startX, int startY, int endX, int endY, Piece[][] board);
 
 
     // Check if the destination is occupied by a friendly piece
-    public boolean isFriendlyPiece(int row, int col, Board board) {
-        return board.getBoard()[row][col] != null && color.name().equals(board.getBoard()[row][col].getColor().name());
+    public boolean isFriendlyPiece(int row, int col, Piece[][] board) {
+        return board[row][col] != null && color.name().equals(board[row][col].getColor().name());
+    }
+
+
+    public boolean isWhite() {
+        return getColor().equals(Color.WHITE);
     }
 }
