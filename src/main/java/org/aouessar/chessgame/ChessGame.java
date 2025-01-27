@@ -1,14 +1,22 @@
 package org.aouessar.chessgame;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import javafx.util.Duration;
+import org.aouessar.chessgame.factory.Piece;
 
 public class ChessGame extends Application {
 
@@ -20,19 +28,19 @@ public class ChessGame extends Application {
 
     public static TextArea messageArea;
 
+    private static boolean isAnimating = false;
+
 
     @Override
     public void start(Stage stage) {
         // Create the chessboard grid
         GridPane gridPane = new GridPane();
 
-
         // Create the chess board and initialize it
         Board board = new Board(TILE_SIZE, WIDTH, HEIGHT, gridPane);
         board.renderBoard();
         board.initializePieces("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", gridPane);
-
-        addAnnotations(gridPane);
+        board.addAnnotations();
 
         // Create the console area
         VBox consoleBox = new VBox();
@@ -44,19 +52,9 @@ public class ChessGame extends Application {
         messageArea.setPrefHeight((HEIGHT * TILE_SIZE) - 50); // Adjust as needed
         messageArea.setWrapText(true);
         messageArea.setStyle("-fx-control-inner-background: black; -fx-text-fill: white;");
+        messageArea.setFocusTraversable(false);
 
-        // TextField for entering commands
-        TextField commandInput = new TextField();
-        commandInput.setPromptText("Enter command (e.g., Re5, Pb6)...");
-
-        // Handle commands when the user presses Enter
-        commandInput.setOnAction(event -> {
-            String command = commandInput.getText().trim();
-            if (!command.isEmpty()) {
-                handleMessage(command);
-                commandInput.clear();
-            }
-        });
+        TextField commandInput = getTextField(board);
 
         // Add TextArea and TextField to the VBox
         consoleBox.getChildren().addAll(messageArea, commandInput);
@@ -67,11 +65,32 @@ public class ChessGame extends Application {
         root.setRight(consoleBox); // Add the console to the right
 
         // Display the stage
-        Scene scene = new Scene(root, TILE_SIZE * WIDTH + 300, TILE_SIZE * HEIGHT + 7);
+        Scene scene = new Scene(root, TILE_SIZE * WIDTH + 485, TILE_SIZE * HEIGHT + 7);
         stage.setTitle("Chess Game");
         stage.setScene(scene);
         stage.show();
     }
+
+
+
+    private static TextField getTextField(Board board) {
+        TextField commandInput = new TextField();
+        commandInput.setPromptText("Enter command (e.g., g1 h3 moves rook g1 to h3)...");
+        commandInput.setFocusTraversable(false);
+
+        CommandLine commandLine = new CommandLine();
+
+        // Handle commands when the user presses Enter
+        commandInput.setOnAction(event -> {
+            String command = commandInput.getText().trim();
+            if (!command.isEmpty()) {
+                commandLine.execute(command, board);
+                commandInput.clear();
+            }
+        });
+        return commandInput;
+    }
+
 
 
 
@@ -89,46 +108,86 @@ public class ChessGame extends Application {
 
 
 
-    /**
-     * Adds chessboard annotations (like "a1", "h8") to the grid.
-     *
-     * @param gridPane The GridPane representing the chessboard.
-     */
-    private void addAnnotations(GridPane gridPane) {
-        // Add column labels (a-h) at the bottom
-        for (int col = 1; col <= WIDTH; col++) {
-            Text label = new Text(String.valueOf((char) ('a' + col - 1)));
-            if ((col - 1) % 2 == 1) {
-                label.setStyle("-fx-font-weight: bold; -fx-fill: #739552; -fx-font-size: 16px;");
-                label.setTranslateY(40);
-                label.setTranslateX(85);
-            } else {
-                label.setStyle("-fx-font-weight: bold; -fx-fill: #ebecd0; -fx-font-size: 16px;");
-                label.setTranslateY(40);
-                label.setTranslateX(85);
-            }
+    public static Rectangle findRectangleInGrid(Piece king, GridPane grid) {
+        int targetRow = king.getRow();
+        int targetCol = king.getCol();
 
-            gridPane.add(label, col - 1, 7);
+        for (Node node : grid.getChildren()) {
+            // Directly fetch and compare row and column indices
+            Integer row = GridPane.getRowIndex(node);
+            Integer col = GridPane.getColumnIndex(node);
+
+            // Default row/col to 0 if null (nodes default to (0,0) if not explicitly set)
+            row = (row == null) ? 0 : row;
+            col = (col == null) ? 0 : col;
+
+            // Match the target indices and ensure the node is a Rectangle
+            if (row == targetRow && col == targetCol && node instanceof Rectangle) {
+                return (Rectangle) node; // Return immediately upon finding the target Rectangle
+            }
+        }
+        return null; // Return null if no match is found
+    }
+
+
+
+    public static void flashTile(Piece king, GridPane grid) {
+        if (isAnimating) {
+            return;
         }
 
+        isAnimating = true;
 
+        Rectangle rectangle = findRectangleInGrid(king, grid);
 
-        for(int row = 1; row <= HEIGHT; row++){
-            Text label = new Text(String.valueOf(HEIGHT + 1 - row));
-            if ((row - 1) % 2 == 0) {
-                label.setStyle("-fx-font-weight: bold; -fx-fill: #739552; -fx-font-size: 16px;");
-                label.setTranslateY(-40);
-            } else {
-                label.setStyle("-fx-font-weight: bold; -fx-fill: #ebecd0; -fx-font-size: 16px;");
-                label.setTranslateY(-40);
-            }
+        // Store the original color
+        assert rectangle != null;
+        Color originalColor = (Color) rectangle.getFill();
 
-            gridPane.add(label, 0, row - 1);
+        Rectangle tempRectangle = new Rectangle(TILE_SIZE, TILE_SIZE);
+        tempRectangle.setFill(originalColor);
+        tempRectangle.setOpacity(0.5);
+        grid.add(tempRectangle, king.getCol(), king.getRow());
+
+        Timeline timeline = new Timeline();
+
+        for (int i = 0; i < 6; i++) {
+            // Alternate between red and original color
+            boolean isRed = (i % 2 == 0);
+            KeyFrame keyFrame = new KeyFrame(
+                    Duration.millis(i * 200), // 200ms intervals
+                    e -> tempRectangle.setFill(isRed ? Color.RED : originalColor)
+            );
+            timeline.getKeyFrames().add(keyFrame);
         }
 
-        // Shift chessboard tiles to align with annotations
-        gridPane.setHgap(1); // Optional spacing for better visibility
-        gridPane.setVgap(1);
+        // When the animation finishes, re-enable the rectangle
+        timeline.setOnFinished(e -> {
+            grid.getChildren().remove(tempRectangle);
+            isAnimating = false;
+        });
+
+        // Play the timeline
+        timeline.play();
+    }
+
+
+
+    public static void showCheckmatePopup(Board board, String title, String header, String message, Alert.AlertType alertType) {
+        Alert alert = new Alert(alertType);
+        alert.setTitle(title);
+        alert.setHeaderText(header);
+        alert.setContentText(message);
+
+        // Create a "Restart Game" button
+        ButtonType restartButton = new ButtonType("Restart Game");
+        alert.getButtonTypes().setAll(restartButton, ButtonType.CLOSE);
+
+        alert.showAndWait().ifPresent(response -> {
+            if (response == restartButton) {
+                board.restartGame("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+            }
+        });
     }
 
 

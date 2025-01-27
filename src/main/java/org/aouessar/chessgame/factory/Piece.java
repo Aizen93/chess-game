@@ -18,7 +18,7 @@ public abstract class Piece {
 
     private int row;
 
-    public int col;
+    private int col;
 
     private final ImageView icon;
 

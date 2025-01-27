@@ -11,9 +11,13 @@ public class Rook extends Piece {
 
     private boolean hasMoved;
 
+
+
     public Rook(char name, Color color, int row, int col, Image icon) {
         super(name, color, row, col, icon);
     }
+
+
 
     @Override
     public boolean isValidMove(int startX, int startY, int endX, int endY, Piece[][] board) {
@@ -38,6 +42,12 @@ public class Rook extends Piece {
 
         // Ensure the destination square is not occupied by a friendly piece
         return !isFriendlyPiece(endX, endY, board);
+    }
+
+
+
+    public boolean hasMoved() {
+        return hasMoved;
     }
 
 }
