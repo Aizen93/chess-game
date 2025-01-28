@@ -1,4 +1,4 @@
-package org.aouessar.chessgame.factory;
+package org.aouessar.chessgame.piece.factory;
 
 import javafx.application.Platform;
 import javafx.geometry.Pos;
@@ -11,9 +11,10 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.aouessar.chessgame.Board;
 import org.aouessar.chessgame.ChessGame;
-import org.aouessar.chessgame.Color;
+import org.aouessar.chessgame.domain.Color;
+import org.aouessar.chessgame.piece.Piece;
 
-public class Pawn extends Piece{
+public class Pawn extends Piece {
 
     public Pawn(char name, Color color, int row, int col, Image icon) {
         super(name, color, row, col, icon);
@@ -124,11 +125,17 @@ public class Pawn extends Piece{
         board[this.getRow()][this.getCol()] = newPiece;
 
         // Update the GUI to reflect the new piece
-        newPiece.addPieceToGrid(originalBoard.getGrid());
-        originalBoard.getGrid().getChildren().remove(this.getIcon());
+        originalBoard.getUi().addPieceToGrid(newPiece);
+        originalBoard.getUi().removePieceFromGrid(this);
 
         // Optional: Log the promotion
         ChessGame.handleMessage(this.getColor() + " Pawn promoted to " + newPiece.getClass().getSimpleName());
+    }
+
+
+    @Override
+    public String getUniCode() {
+        return this.getColor().equals(Color.WHITE) ?  "♙" : "♟";
     }
 
 }

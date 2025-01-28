@@ -1,9 +1,11 @@
-package org.aouessar.chessgame.factory;
+package org.aouessar.chessgame.piece.factory;
 
 import javafx.scene.image.Image;
-import org.aouessar.chessgame.Color;
+import org.aouessar.chessgame.domain.Color;
+import org.aouessar.chessgame.piece.Piece;
 
 public class Bishop extends Piece {
+
 
     public Bishop(char name, Color color, int row, int col, Image icon) {
         super(name, color, row, col, icon);
@@ -29,5 +31,10 @@ public class Bishop extends Piece {
         }
 
         return !isFriendlyPiece(endX, endY, board);
+    }
+
+    @Override
+    public String getUniCode() {
+        return this.getColor().equals(Color.WHITE) ?  "♗" : "♝";
     }
 }

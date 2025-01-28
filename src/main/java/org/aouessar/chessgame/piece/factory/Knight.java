@@ -1,7 +1,8 @@
-package org.aouessar.chessgame.factory;
+package org.aouessar.chessgame.piece.factory;
 
 import javafx.scene.image.Image;
-import org.aouessar.chessgame.Color;
+import org.aouessar.chessgame.domain.Color;
+import org.aouessar.chessgame.piece.Piece;
 
 public class Knight extends Piece {
 
@@ -21,4 +22,12 @@ public class Knight extends Piece {
 
         return false;
     }
+
+
+
+    @Override
+    public String getUniCode() {
+        return this.getColor().equals(Color.WHITE) ?  "♘" : "♞";
+    }
+
 }

@@ -1,9 +1,10 @@
-package org.aouessar.chessgame.factory;
+package org.aouessar.chessgame.piece.factory;
 
 import javafx.scene.image.Image;
 import lombok.Getter;
 import lombok.Setter;
-import org.aouessar.chessgame.Color;
+import org.aouessar.chessgame.domain.Color;
+import org.aouessar.chessgame.piece.Piece;
 
 @Setter
 @Getter
@@ -48,6 +49,13 @@ public class Rook extends Piece {
 
     public boolean hasMoved() {
         return hasMoved;
+    }
+
+
+
+    @Override
+    public String getUniCode() {
+        return this.getColor().equals(Color.WHITE) ?  "♖" : "♜";
     }
 
 }

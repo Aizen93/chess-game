@@ -1,12 +1,10 @@
-package org.aouessar.chessgame.factory;
+package org.aouessar.chessgame.piece;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.GridPane;
 import lombok.Getter;
 import lombok.Setter;
-import org.aouessar.chessgame.ChessGame;
-import org.aouessar.chessgame.Color;
+import org.aouessar.chessgame.domain.Color;
 
 @Getter
 @Setter
@@ -14,13 +12,17 @@ public abstract class Piece {
 
     private final char name;
 
-    private final Color color; // Indicates whether the piece is white or black
+    private final Color color;
+
+    private final ImageView icon;
 
     private int row;
 
     private int col;
 
-    private final ImageView icon;
+    protected boolean hasMoved;
+
+
 
 
     public Piece(char name, Color color, int row, int col, Image icon) {
@@ -29,13 +31,6 @@ public abstract class Piece {
         this.row = row;
         this.col = col;
         this.icon = new ImageView(icon);
-    }
-
-    public void addPieceToGrid(GridPane grid) {
-        icon.setFitWidth(ChessGame.TILE_SIZE * 0.98);
-        icon.setFitHeight(ChessGame.TILE_SIZE * 0.98);
-        icon.setMouseTransparent(true);
-        grid.add(icon, col, row);
     }
 
 
@@ -49,7 +44,15 @@ public abstract class Piece {
     }
 
 
+    public abstract String getUniCode();
+
+
     public boolean isWhite() {
         return getColor().equals(Color.WHITE);
+    }
+
+
+    public boolean hasMoved() {
+        return hasMoved;
     }
 }

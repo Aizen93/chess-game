@@ -1,7 +1,7 @@
 package org.aouessar.chessgame;
 
-import org.aouessar.chessgame.factory.King;
-import org.aouessar.chessgame.factory.Piece;
+import org.aouessar.chessgame.piece.factory.King;
+import org.aouessar.chessgame.piece.Piece;
 
 public class Rules {
 

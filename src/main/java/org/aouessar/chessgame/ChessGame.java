@@ -16,7 +16,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import org.aouessar.chessgame.factory.Piece;
+import org.aouessar.chessgame.piece.Piece;
 
 public class ChessGame extends Application {
 
@@ -38,9 +38,6 @@ public class ChessGame extends Application {
 
         // Create the chess board and initialize it
         Board board = new Board(TILE_SIZE, WIDTH, HEIGHT, gridPane);
-        board.renderBoard();
-        board.initializePieces("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", gridPane);
-        board.addAnnotations();
 
         // Create the console area
         VBox consoleBox = new VBox();

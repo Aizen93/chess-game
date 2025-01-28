@@ -8,4 +8,8 @@ module org.aouessar.chessgame {
 
     opens org.aouessar.chessgame to javafx.fxml;
     exports org.aouessar.chessgame;
+    exports org.aouessar.chessgame.piece.factory;
+    exports org.aouessar.chessgame.domain;
+    opens org.aouessar.chessgame.domain to javafx.fxml;
+    exports org.aouessar.chessgame.piece;
 }

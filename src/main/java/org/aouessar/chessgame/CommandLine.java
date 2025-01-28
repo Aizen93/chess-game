@@ -14,7 +14,13 @@ public class CommandLine {
         switch(mainCommand.toLowerCase()) {
             case "reset" -> board.restartGame("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
-            case "save" -> ChessGame.handleMessage(board.saveToFEN());
+            case "save" -> {
+                String fen = board.getParser().saveToFENString(
+                    board.getGameState().isWhiteTurn(),
+                    board.getBoard()
+                );
+                ChessGame.handleMessage(fen);
+            }
 
             case "fen" -> {
                 if(parts.length == 7 && !parts[1].isEmpty()) {
