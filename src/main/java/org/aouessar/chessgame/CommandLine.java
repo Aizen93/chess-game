@@ -30,6 +30,32 @@ public class CommandLine {
                 }
             }
 
+            case "skill" -> {
+                /*
+                Level	   Skill Level (0-20)	Search Depth
+                Beginner	    2	                  4-6
+                Intermediate    7	                  8-10
+                Advanced	    12	                  12-15
+                Master	        17	                  16-20
+                Grandmaster	    20	                  20+
+                */
+                try {
+                    board.setSkillLevel(Integer.parseInt(parts[1]));
+
+                } catch (Exception e) {
+                    ChessGame.handleMessage("Command invalid : ex -> skill 15 -> range[2,20]");
+                }
+            }
+
+            case "depth" -> {
+                try {
+                    board.setComputationDepth(Integer.parseInt(parts[1]));
+
+                } catch (Exception e) {
+                    ChessGame.handleMessage("Command invalid : ex -> depth 15 -> range[4,30]");
+                }
+            }
+
             default -> {
                 if(isValidMoveFormat(command)){
                     int[] coordinates = parseMoveCommand(command);

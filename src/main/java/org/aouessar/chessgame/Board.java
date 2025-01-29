@@ -6,6 +6,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.shape.Rectangle;
 import lombok.Getter;
 import lombok.Setter;
+import org.aouessar.chessgame.ai.Stockfish;
 import org.aouessar.chessgame.piece.factory.King;
 import org.aouessar.chessgame.piece.factory.Pawn;
 import org.aouessar.chessgame.piece.Piece;
@@ -39,6 +40,12 @@ public class Board {
 
     private final Map<Character, Image> pieceImages;
 
+    private final Stockfish stockfish;
+
+    private int skillLevel;
+
+    private int computationDepth;
+
 
 
     public Board(int tileSize, int width, int height, GridPane gridPane) {
@@ -56,6 +63,12 @@ public class Board {
         this.ui.renderBoard();
         this.board = this.parser.initializePieces("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", gameState, this);
         this.ui.addAnnotations();
+
+        skillLevel = 12;
+        computationDepth = 15;
+
+        this.stockfish = new Stockfish("C:\\Users\\u200159\\Desktop\\Workspace\\personnal\\chess-game\\ChessGame\\src\\main\\resources\\public\\stockfish\\stockfish-windows-x86-64-avx2.exe");
+        makeAIMove();
     }
 
 
@@ -83,31 +96,35 @@ public class Board {
                 ChessGame.handleMessage("Piece selection changed at (" + row + ", " + col + "): " + (selectedPiece.getColor().name() + " " + selectedPiece.getClass().getSimpleName()));
             }
             else {
-                move(row, col);
+                //humain joue blanc
+                boolean didMove = move(row, col);
+                if (didMove && !gameState.isGameOver()) {
+                    makeAIMove(); // Call Stockfish to make a move
+                }
             }
         }
     }
 
 
 
-    public void move(int endRow, int endCol) {
-        if (selectedPiece == null) return;
+    public boolean move(int endRow, int endCol) {
+        if (selectedPiece == null) return false;
 
         if (selectedPiece.isWhite() != gameState.isWhiteTurn()) {
             ChessGame.handleMessage("It's " + (gameState.isWhiteTurn() ? "White" : "Black") + "'s turn.");
-            return;
+            return false;
         }
 
         if(!selectedPiece.isValidMove(selectedPiece.getRow(), selectedPiece.getCol(), endRow, endCol, board)){
             ChessGame.handleMessage("Invalid move for " + (selectedPiece.getColor().name() + " " + selectedPiece.getClass().getSimpleName()));
-            return;
+            return false;
         }
 
         // Check if the move prevents the king from being in check
         if (!Rules.doesMovePreventCheck(selectedPiece, endRow, endCol, gameState.getHEIGHT(), gameState.getWIDTH(), board)) {
             ChessGame.flashTile(getKingsTurn(), grid);
             ChessGame.handleMessage("Move not allowed: it leaves the king in check.");
-            return;
+            return false;
         }
 
 
@@ -170,6 +187,7 @@ public class Board {
             ChessGame.showCheckmatePopup(this, "Game Over", "Stalemate !", "This is a DRAW !", Alert.AlertType.INFORMATION);
         }
 
+        return true;
     }
 
 
@@ -184,6 +202,7 @@ public class Board {
         this.ui.renderBoard();
         board = parser.initializePieces(fen, gameState, this);
         this.ui.addAnnotations();
+        makeAIMove();
         ChessGame.handleMessage("-------------- Game RESTARTED --------------");
     }
 
@@ -258,5 +277,28 @@ public class Board {
         System.out.println();
         System.out.println("****************************************");
         System.out.println();
+    }
+
+
+    public boolean makeAIMove() {
+        if (stockfish != null) {
+            // Convert the current board state to FEN
+            String fen = parser.saveToFENString(gameState.isWhiteTurn(), board);
+
+            // Get the best move from Stockfish
+            String bestMove = stockfish.getBestMove(fen, computationDepth, skillLevel);
+
+            if (bestMove != null) {
+                // Parse the move and update the board
+                int startRow = 8 - Character.getNumericValue(bestMove.charAt(1));
+                int startCol = bestMove.charAt(0) - 'a';
+                int endRow = 8 - Character.getNumericValue(bestMove.charAt(3));
+                int endCol = bestMove.charAt(2) - 'a';
+
+                selectedPiece = board[startRow][startCol];
+                return move(endRow, endCol);
+            }
+        }
+        return false;
     }
 }
